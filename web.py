@@ -18,7 +18,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 load_dotenv()
 
-DEEPSEEK_API_KEY = "sk-b8d54f473602495ca415df013c0892aa"
+DEEPSEEK_API_KEY = " "
 
 
 # =====================CONFIG===========================
