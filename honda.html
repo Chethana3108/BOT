@@ -1,0 +1,2878 @@
+<!DOCTYPE html>
+<!-- ==========================================================================
+     MODIFICATIONS / CHANGELOG:
+     1. Rebranded all occurrences of "Honda" to "Automobile" throughout the page
+        (Title, Navbar, Hero, Feature Cards, Lineup, Knowledge Bot, and FAQs).
+     2. Renamed "Honda AI Bike Consultant" heading to "Recommendation Agent"
+        (and subtitle "Finds your perfect Honda" to "Finds your perfect Automobile").
+     3. Renamed assistant selector and FAQ text from "Recommendation Bot" to "Recommendation Agent".
+   ========================================================================== -->
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+
+<title>Automobile AI Experience</title>
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+<style>
+
+/* =====================================================
+   GLOBAL
+===================================================== */
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+body{
+    font-family:Arial, Helvetica, sans-serif;
+    background:#0b0b0b;
+    color:white;
+    overflow-x:hidden;
+}
+
+/* =====================================================
+   NAVBAR
+===================================================== */
+
+.navbar{
+    background:rgba(0,0,0,0.8);
+    backdrop-filter: blur(10px);
+}
+
+.navbar-brand{
+    color:#e60012 !important;
+    font-weight:bold;
+    font-size:28px;
+}
+
+/* =====================================================
+   HERO
+===================================================== */
+
+.hero{
+    height:100vh;
+    background:
+    linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.7)),
+    url('https://images.unsplash.com/photo-1558981806-ec527fa84c39?q=80&w=1920');
+
+    background-size:cover;
+    background-position:center;
+    display:flex;
+    align-items:center;
+}
+
+.hero-content{
+    max-width:700px;
+}
+
+.hero h1{
+    font-size:70px;
+    font-weight:800;
+    line-height:1.1;
+}
+
+.hero span{
+    color:#e60012;
+}
+
+.hero p{
+    margin-top:20px;
+    font-size:20px;
+    color:#ccc;
+}
+
+.hero-btn{
+    margin-top:30px;
+    background:#e60012;
+    border:none;
+    padding:14px 35px;
+    color:white;
+    border-radius:50px;
+    font-size:18px;
+    transition:0.3s;
+}
+
+.hero-btn:hover{
+    background:#ff1a2f;
+    transform:translateY(-3px);
+}
+
+/* =====================================================
+   FEATURES
+===================================================== */
+
+.features{
+    padding:100px 0;
+    background:#111;
+}
+
+.section-title{
+    text-align:center;
+    margin-bottom:60px;
+}
+
+.section-title h2{
+    font-size:50px;
+    font-weight:700;
+}
+
+.feature-card{
+    background:#1b1b1b;
+    border-radius:20px;
+    padding:40px;
+    transition:0.3s;
+    height:100%;
+    border:1px solid rgba(255,255,255,0.08);
+}
+
+.feature-card:hover{
+    transform:translateY(-10px);
+    border-color:#e60012;
+}
+
+.feature-card i{
+    font-size:50px;
+    color:#e60012;
+    margin-bottom:20px;
+}
+
+/* =====================================================
+   BIKES
+===================================================== */
+
+.bikes{
+    padding:100px 0;
+    background:#0d0d0d;
+}
+
+.bike-card{
+    background:#161616;
+    border-radius:20px;
+    overflow:hidden;
+    transition:0.3s;
+    border:1px solid rgba(255,255,255,0.08);
+}
+
+.bike-card:hover{
+    transform:scale(1.03);
+}
+
+.bike-card img{
+    width:100%;
+    height:240px;
+    object-fit:cover;
+}
+
+.bike-card-body{
+    padding:25px;
+}
+
+/* =====================================================
+   FLOATING CHAT BUTTON
+===================================================== */
+
+.chatbot-fab{
+    position:fixed;
+    bottom:30px;
+    right:30px;
+    width:70px;
+    height:70px;
+    background:#e60012;
+    border-radius:50%;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    cursor:pointer;
+    z-index:9999;
+    box-shadow:0 10px 30px rgba(230,0,18,0.4);
+    transition:0.3s;
+}
+
+.chatbot-fab:hover{
+    transform:scale(1.1);
+}
+
+.chatbot-fab i{
+    font-size:30px;
+}
+
+/* =====================================================
+   BOT SELECTION
+===================================================== */
+
+.bot-selection{
+    position:fixed;
+    bottom:120px;
+    right:30px;
+    width:280px;
+    background:#181818;
+    border-radius:20px;
+    padding:20px;
+    display:none;
+    z-index:9999;
+    border:1px solid rgba(255,255,255,0.08);
+}
+
+.bot-selection h4{
+    margin-bottom:20px;
+}
+
+.bot-option{
+    width:100%;
+    padding:15px;
+    border:none;
+    border-radius:14px;
+    margin-bottom:15px;
+    background:#262626;
+    color:white;
+    text-align:left;
+    transition:0.3s;
+}
+
+.bot-option:hover{
+    background:#e60012;
+}
+
+
+
+/* =====================================================
+   KNOWLEDGE BOT CHAT WINDOW
+===================================================== */
+
+.chat-window{
+    position:fixed;
+    bottom:30px;
+    right:30px;
+
+    width:420px;
+
+    height:calc(100vh - 60px);
+    max-height:760px;
+    min-height:500px;
+
+    background:#121212;
+
+    border-radius:25px;
+
+    overflow:hidden;
+
+    display:none;
+    flex-direction:column;
+
+    z-index:10000;
+
+    border:1px solid rgba(255,255,255,0.08);
+
+    box-shadow:
+    0 20px 60px rgba(0,0,0,0.5);
+
+    backdrop-filter:blur(10px);
+}
+
+/* =====================================================
+   CHAT HEADER
+===================================================== */
+
+.chat-header{
+
+    background:#e60012;
+
+    padding:18px;
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+    flex-shrink:0;
+}
+
+/* =====================================================
+   MESSAGE AREA
+===================================================== */
+
+.chat-messages{
+
+    flex:1;
+
+    overflow-y:auto;
+
+    overflow-x:hidden;
+
+    padding:20px;
+
+    display:flex;
+
+    flex-direction:column;
+
+    gap:14px;
+
+    scroll-behavior:smooth;
+
+    min-height:0;
+}
+
+/* =====================================================
+   CUSTOM SCROLLBAR
+===================================================== */
+
+.chat-messages::-webkit-scrollbar{
+    width:6px;
+}
+
+.chat-messages::-webkit-scrollbar-track{
+    background:transparent;
+}
+
+.chat-messages::-webkit-scrollbar-thumb{
+    background:rgba(255,255,255,0.15);
+    border-radius:20px;
+}
+
+.chat-messages::-webkit-scrollbar-thumb:hover{
+    background:rgba(255,255,255,0.28);
+}
+
+/* =====================================================
+   MESSAGE
+===================================================== */
+
+.message{
+    display:flex;
+    width:100%;
+    margin:0;
+}
+
+.user{
+    justify-content:flex-end;
+}
+
+.bot{
+    justify-content:flex-start;
+}
+
+/* =====================================================
+   CHAT BUBBLE
+===================================================== */
+
+.bubble{
+
+    max-width:85%;
+
+    padding:14px 18px;
+
+    border-radius:18px;
+
+    line-height:1.7;
+
+    white-space:pre-wrap;
+
+    word-wrap:break-word;
+
+    overflow-wrap:break-word;
+
+    font-size:15px;
+}
+
+/* =====================================================
+   USER MESSAGE
+===================================================== */
+
+.user .bubble{
+    background:#e60012;
+    color:white;
+}
+
+/* =====================================================
+   BOT MESSAGE
+===================================================== */
+
+.bot .bubble{
+    background:#242424;
+    color:#f1f1f1;
+}
+
+.streaming-cursor{
+    display:inline-block;
+    width:3px;
+    height:15px;
+    margin-left:3px;
+    background:#e60012;
+    vertical-align:middle;
+    border-radius:2px;
+    animation:cursorBlink 0.6s infinite alternate;
+}
+
+@keyframes cursorBlink{
+    0% { opacity: 1; }
+    100% { opacity: 0; }
+}
+
+/* =====================================================
+   INPUT AREA
+===================================================== */
+
+.chat-input-area{
+
+    padding:15px;
+
+    border-top:1px solid rgba(255,255,255,0.08);
+
+    background:#121212;
+
+    flex-shrink:0;
+}
+
+/* =====================================================
+   INPUT
+===================================================== */
+
+.chat-input-area{
+    padding:15px;
+    border-top:1px solid rgba(255,255,255,0.08);
+}
+
+.chat-input-wrap{
+    display:flex;
+    gap:10px;
+}
+
+.chat-input{
+    flex:1;
+    background:#1f1f1f;
+    border:none;
+    color:white;
+    padding:14px;
+    border-radius:14px;
+}
+
+.chat-input:focus{
+    outline:none;
+}
+
+.send-btn{
+    width:55px;
+    border:none;
+    border-radius:14px;
+    background:#e60012;
+    color:white;
+}
+
+/* =====================================================
+   PREMIUM RECOMMENDATION UI
+===================================================== */
+
+.recommendation-ui{
+    position:fixed;
+    inset:0;
+    background:#0b0d13;
+    z-index:20000;
+    display:none;
+}
+
+.page{
+    height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:20px;
+}
+
+.chat-container{
+    width:100%;
+    max-width:860px;
+    height:92vh;
+    background:#111318;
+    border-radius:20px;
+    overflow:hidden;
+    display:flex;
+    flex-direction:column;
+    border:1px solid rgba(255,255,255,0.08);
+}
+
+.chat-header-premium{
+    padding:18px 28px;
+    border-bottom:1px solid rgba(255,255,255,0.06);
+    display:flex;
+    align-items:center;
+    gap:16px;
+}
+
+.logo-mark{
+    width:44px;
+    height:44px;
+    background:#cc0000;
+    border-radius:12px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+}
+
+.header-title{
+    font-size:18px;
+    font-weight:700;
+    font-family:'Rajdhani', sans-serif;
+}
+
+.header-sub{
+    font-size:12px;
+    color:#8b92a8;
+}
+
+.status-pill{
+    margin-left:auto;
+    display:flex;
+    align-items:center;
+    gap:7px;
+}
+
+.status-dot{
+    width:7px;
+    height:7px;
+    border-radius:50%;
+    background:#22c55e;
+}
+
+.status-text{
+    color:#22c55e;
+    font-size:12px;
+}
+
+.premium-close{
+    width:42px;
+    height:42px;
+    border:none;
+    border-radius:12px;
+    background:#1f1f1f;
+    color:white;
+    cursor:pointer;
+}
+
+/* =========================================
+   FAQ BUTTON
+========================================= */
+
+.faq-btn{
+    border:none;
+    background:#1f1f1f;
+    color:white;
+    padding:10px 16px;
+    border-radius:12px;
+    display:flex;
+    align-items:center;
+    gap:8px;
+    cursor:pointer;
+    transition:0.3s;
+    font-size:14px;
+    margin-left:auto;
+    margin-right:18px;
+}
+
+.faq-btn:hover{
+    background:#cc0000;
+}
+
+/* =========================================
+   FAQ POPUP OVERLAY
+========================================= */
+
+.faq-popup-overlay{
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,0.65);
+    backdrop-filter:blur(8px);
+    z-index:50000;
+    display:none;
+    justify-content:center;
+    align-items:center;
+    padding:20px;
+}
+
+/* =========================================
+   FAQ POPUP BOX
+========================================= */
+
+.faq-popup-box{
+    width:100%;
+    max-width:750px;
+    max-height:85vh;
+    overflow:hidden;
+    background:#12151d;
+    border-radius:24px;
+    border:1px solid rgba(255,255,255,0.08);
+    box-shadow:0 20px 60px rgba(0,0,0,0.6);
+    animation:faqPopupAnim 0.3s ease;
+}
+
+/* =========================================
+   POPUP ANIMATION
+========================================= */
+
+@keyframes faqPopupAnim{
+
+    from{
+        transform:translateY(20px) scale(0.96);
+        opacity:0;
+    }
+
+    to{
+        transform:translateY(0) scale(1);
+        opacity:1;
+    }
+
+}
+
+/* =========================================
+   FAQ HEADER
+========================================= */
+
+.faq-popup-header{
+    padding:22px 26px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    border-bottom:1px solid rgba(255,255,255,0.06);
+}
+
+.faq-popup-header h3{
+    margin:0;
+    font-size:24px;
+    font-weight:700;
+}
+
+/* =========================================
+   CLOSE BUTTON
+========================================= */
+
+.faq-close-btn{
+    width:42px;
+    height:42px;
+    border:none;
+    border-radius:12px;
+    background:#1f1f1f;
+    color:white;
+    cursor:pointer;
+    transition:0.3s;
+}
+
+.faq-close-btn:hover{
+    background:#cc0000;
+}
+
+/* =========================================
+   FAQ BODY
+========================================= */
+
+.faq-popup-body{
+    padding:28px;
+    overflow-y:auto;
+    max-height:70vh;
+}
+
+/* =========================================
+   FAQ ITEMS
+========================================= */
+
+.faq-item{
+    margin-bottom:28px;
+}
+
+.faq-item h5{
+    font-size:17px;
+    margin-bottom:10px;
+    color:white;
+}
+
+.faq-item p{
+    color:#9ca3af;
+    line-height:1.8;
+    font-size:15px;
+}
+
+.chat-body{
+
+    flex:1;
+
+    overflow-y:auto;
+
+    padding:28px;
+
+    display:flex;
+
+    flex-direction:column;
+
+    gap:18px;
+
+    scroll-behavior:smooth;
+
+    min-height:0;
+}
+
+.welcome-strip{
+    background:rgba(204,0,0,0.06);
+    border:1px solid rgba(204,0,0,0.18);
+    border-radius:14px;
+    padding:18px 20px;
+    display:flex;
+    gap:14px;
+}
+
+.welcome-strip p{
+    color:#8b92a8;
+}
+
+.input-area{
+    padding:16px 28px 20px;
+    border-top:1px solid rgba(255,255,255,0.06);
+}
+
+.input-row{
+    display:flex;
+    gap:10px;
+}
+
+.typing{
+    color:#aaa;
+    font-size:13px;
+    margin-top:10px;
+}
+
+/* =========================================
+   BIKE CARD
+========================================= */
+
+.bike-card-wrapper{
+    display:flex;
+    padding-left:40px;
+}
+
+.premium-bike-card{
+    width:340px;
+    background:#1c1f28;
+    border:1px solid rgba(204,0,0,0.25);
+    border-radius:18px;
+    overflow:hidden;
+}
+
+.premium-bike-image{
+    width:100%;
+    height:220px;
+    object-fit:contain;
+    background:#111;
+    padding:20px;
+}
+
+.premium-bike-body{
+    padding:18px;
+}
+
+.premium-bike-name{
+    font-size:20px;
+    font-weight:700;
+    margin-bottom:12px;
+}
+
+.explore-btn{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    background:#cc0000;
+    color:white;
+    text-decoration:none;
+    padding:10px 18px;
+    border-radius:50px;
+    font-size:14px;
+    transition:0.3s;
+}
+
+.explore-btn:hover{
+    background:#ff1a1a;
+    color:white;
+}
+
+/* =====================================================
+   RESPONSIVE
+===================================================== */
+
+@media(max-width:768px){
+
+    .hero h1{
+        font-size:45px;
+    }
+
+    .chat-window{
+        width:100%;
+        height:100%;
+        right:0;
+        bottom:0;
+        border-radius:0;
+    }
+
+    .page{
+        padding:0;
+    }
+
+    .chat-container{
+        height:100vh;
+        border-radius:0;
+    }
+
+}
+
+/* =========================================
+   ACTION BUTTONS
+========================================= */
+
+.action-btn{
+    width:100%;
+    border:none;
+    padding:12px 18px;
+    border-radius:14px;
+    margin-top:12px;
+    color:white;
+    font-size:14px;
+    transition:0.3s;
+}
+
+.testdrive-btn{
+    background:#2563eb;
+}
+
+.testdrive-btn:hover{
+    background:#1d4ed8;
+}
+
+.expert-btn{
+    background:#16a34a;
+}
+
+.expert-btn:hover{
+    background:#15803d;
+}
+
+/* =========================================
+   PREMIUM LEAD POPUP
+========================================= */
+
+.lead-popup-overlay{
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,0.75);
+    backdrop-filter:blur(18px);
+    display:none;
+    justify-content:center;
+    align-items:center;
+    z-index:60000;
+    padding:30px;
+}
+
+.lead-popup-box{
+    width:100%;
+    max-width:900px;
+    max-height:92vh;
+    background:linear-gradient(
+        145deg,
+        #111827,
+        #0b1220
+    );
+    border-radius:30px;
+    overflow:hidden;
+    border:1px solid rgba(255,255,255,0.08);
+    box-shadow:
+    0 30px 80px rgba(0,0,0,0.6),
+    inset 0 1px 0 rgba(255,255,255,0.04);
+
+    animation:popupFade 0.35s ease;
+    display:flex;
+    flex-direction:column;
+}
+
+@keyframes popupFade{
+
+    from{
+        opacity:0;
+        transform:translateY(20px) scale(0.96);
+    }
+
+    to{
+        opacity:1;
+        transform:translateY(0) scale(1);
+    }
+
+}
+
+.lead-popup-header{
+    padding:24px 30px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    border-bottom:1px solid rgba(255,255,255,0.06);
+    background:rgba(255,255,255,0.02);
+}
+
+.lead-popup-title{
+    font-size:28px;
+    font-weight:700;
+    color:white;
+}
+
+.lead-popup-close{
+    width:48px;
+    height:48px;
+    border:none;
+    border-radius:16px;
+    background:#1f2937;
+    color:white;
+    cursor:pointer;
+    transition:0.3s;
+    font-size:18px;
+}
+
+.lead-popup-close:hover{
+    background:#dc2626;
+    transform:rotate(90deg);
+}
+
+.lead-popup-body{
+    padding:30px;
+    overflow-y:auto;
+}
+
+/* =========================================
+   BIKE INFO CARD
+========================================= */
+
+.popup-bike-card{
+    background:rgba(255,255,255,0.03);
+    border:1px solid rgba(255,255,255,0.06);
+    border-radius:22px;
+    padding:22px;
+    margin-bottom:28px;
+}
+
+.popup-bike-card h4{
+    margin:0;
+    font-size:24px;
+    color:white;
+}
+
+.popup-bike-card p{
+    margin-top:8px;
+    color:#9ca3af;
+}
+
+/* =========================================
+   GRID FORM
+========================================= */
+
+.lead-form-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:22px;
+}
+
+.full-width{
+    grid-column:1 / -1;
+}
+
+.lead-form-group{
+    display:flex;
+    flex-direction:column;
+}
+
+.lead-form-group label{
+    margin-bottom:10px;
+    color:#d1d5db;
+    font-size:14px;
+    font-weight:500;
+}
+
+.lead-form-input{
+    width:100%;
+    background:#1e293b;
+    border:1px solid rgba(255,255,255,0.08);
+    color:white;
+    padding:16px;
+    border-radius:18px;
+    font-size:15px;
+    transition:0.3s;
+}
+
+.lead-form-input:focus{
+    outline:none;
+    border-color:#dc2626;
+    box-shadow:0 0 0 4px rgba(220,38,38,0.15);
+}
+
+textarea.lead-form-input{
+    resize:none;
+    min-height:120px;
+}
+
+/* =========================================
+   STICKY FOOTER
+========================================= */
+
+.lead-popup-footer{
+    padding:24px 30px;
+    border-top:1px solid rgba(255,255,255,0.06);
+    background:#0f172a;
+}
+
+/* =========================================
+   SUBMIT BUTTON AREA
+========================================= */
+
+.submit-btn-wrapper{
+    display:flex;
+    justify-content:flex-end;
+    margin-top:30px;
+    padding-bottom:10px;
+}
+
+/* =========================================
+   SUBMIT BUTTON
+========================================= */
+
+.lead-submit-btn{
+    min-width:220px;
+    border:none;
+    padding:14px 26px;
+    border-radius:16px;
+    background:linear-gradient(
+        135deg,
+        #dc2626,
+        #ef4444
+    );
+    color:white;
+    font-size:15px;
+    font-weight:600;
+    transition:0.3s;
+    opacity:0.45;
+    cursor:not-allowed;
+    box-shadow:
+    0 10px 30px rgba(220,38,38,0.25);
+}
+
+/* =========================================
+   ACTIVE
+========================================= */
+
+.lead-submit-btn.active{
+
+    opacity:1;
+    cursor:pointer;
+
+}
+
+.lead-submit-btn.active:hover{
+
+    transform:translateY(-2px);
+    box-shadow:
+    0 14px 34px rgba(220,38,38,0.35);
+
+}
+
+/* =========================================
+   MOBILE
+========================================= */
+
+@media(max-width:768px){
+
+    .submit-btn-wrapper{
+
+        justify-content:center;
+
+    }
+
+    .lead-submit-btn{
+
+        width:100%;
+
+    }
+
+}
+
+.lead-submit-btn.active:hover{
+    transform:translateY(-2px);
+}
+
+/* =========================================
+   SUCCESS STATE
+========================================= */
+
+.success-box{
+    text-align:center;
+    padding:80px 30px;
+}
+
+.success-box i{
+    font-size:90px;
+    color:#22c55e;
+    margin-bottom:24px;
+}
+
+.success-box h3{
+    font-size:34px;
+    margin-bottom:14px;
+}
+
+.success-box p{
+    color:#9ca3af;
+    font-size:17px;
+    line-height:1.8;
+}
+
+/* =========================================
+   MOBILE
+========================================= */
+
+@media(max-width:768px){
+
+    .lead-popup-box{
+        max-height:100vh;
+        border-radius:0;
+    }
+
+    .lead-form-grid{
+        grid-template-columns:1fr;
+    }
+
+}
+
+/* =====================================================
+   TYPING INDICATOR
+===================================================== */
+
+.typing-bubble{
+
+    display:flex;
+    align-items:center;
+    gap:6px;
+
+    min-width:70px;
+
+    padding:16px 18px;
+}
+
+.typing-bubble span{
+
+    width:8px;
+    height:8px;
+
+    background:#bdbdbd;
+
+    border-radius:50%;
+
+    animation:typingBounce 1.4s infinite ease-in-out;
+}
+
+/* =========================================
+   ANIMATION DELAYS
+========================================= */
+
+.typing-bubble span:nth-child(1){
+    animation-delay:0s;
+}
+
+.typing-bubble span:nth-child(2){
+    animation-delay:0.2s;
+}
+
+.typing-bubble span:nth-child(3){
+    animation-delay:0.4s;
+}
+
+/* =========================================
+   KEYFRAMES
+========================================= */
+
+@keyframes typingBounce{
+
+    0%,
+    80%,
+    100%{
+
+        transform:scale(0.7);
+        opacity:0.5;
+
+    }
+
+    40%{
+
+        transform:scale(1);
+        opacity:1;
+
+    }
+
+}
+
+</style>
+</head>
+
+<body>
+
+<!-- =====================================================
+     NAVBAR
+===================================================== -->
+
+<nav class="navbar navbar-expand-lg navbar-dark fixed-top">
+    <div class="container">
+        <a class="navbar-brand" href="#">AUTOMOBILE</a>
+    </div>
+</nav>
+
+<!-- =====================================================
+     HERO
+===================================================== -->
+
+<section class="hero">
+
+    <div class="container">
+
+        <div class="hero-content">
+
+            <h1>
+                Experience The Future Of
+                <span>Automobile</span>
+            </h1>
+
+            <p>
+                Discover intelligent riding experiences
+                with AI-powered Automobile assistants.
+            </p>
+
+            <button class="hero-btn">
+                Explore Automobile
+            </button>
+
+        </div>
+
+    </div>
+
+</section>
+
+<!-- =====================================================
+     FEATURES
+===================================================== -->
+
+<section class="features">
+
+    <div class="container">
+
+        <div class="section-title">
+            <h2>Why Automobile AI?</h2>
+        </div>
+
+        <div class="row g-4">
+
+            <div class="col-md-4">
+
+                <div class="feature-card">
+
+                    <i class="fa-solid fa-robot"></i>
+
+                    <h4>AI Knowledge Assistant</h4>
+
+                    <p>
+                        Ask anything about Automobile technologies,
+                        safety, engines, and smart features.
+                    </p>
+
+                </div>
+
+            </div>
+
+            <div class="col-md-4">
+
+                <div class="feature-card">
+
+                    <i class="fa-solid fa-motorcycle"></i>
+
+                    <h4>Bike Recommendation</h4>
+
+                    <p>
+                        Get personalized Automobile bike
+                        recommendations.
+                    </p>
+
+                </div>
+
+            </div>
+
+            <div class="col-md-4">
+
+                <div class="feature-card">
+
+                    <i class="fa-solid fa-shield-heart"></i>
+
+                    <h4>Smart Safety Guidance</h4>
+
+                    <p>
+                        Learn about Automobile intelligent
+                        rider systems.
+                    </p>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+<!-- =====================================================
+     BIKES
+===================================================== -->
+
+<section class="bikes">
+
+    <div class="container">
+
+        <div class="section-title">
+            <h2>Automobile Lineup</h2>
+        </div>
+
+        <div class="row g-4">
+
+            <div class="col-md-4">
+
+                <div class="bike-card">
+
+                    <img src="https://images.unsplash.com/photo-1558981806-ec527fa84c39?q=80&w=1200">
+
+                    <div class="bike-card-body">
+                        <h4>CBR Series</h4>
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="col-md-4">
+
+                <div class="bike-card">
+
+                    <img src="https://images.unsplash.com/photo-1517846693594-1567da72af75?q=80&w=1200">
+
+                    <div class="bike-card-body">
+                        <h4>Africa Twin</h4>
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="col-md-4">
+
+                <div class="bike-card">
+
+                    <img src="https://images.unsplash.com/photo-1558981285-6f0c94958bb6?q=80&w=1200">
+
+                    <div class="bike-card-body">
+                        <h4>Gold Wing</h4>
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+<!-- =====================================================
+     FLOATING BOT BUTTON
+===================================================== -->
+
+<div class="chatbot-fab" id="chatbotFab">
+    <i class="fa-solid fa-comments"></i>
+</div>
+
+<!-- =====================================================
+     BOT SELECTION
+===================================================== -->
+
+<div class="bot-selection" id="botSelection">
+
+    <h4>Select Assistant</h4>
+
+    <button class="bot-option" onclick="openBot('knowledge')">
+        <i class="fa-solid fa-book"></i>
+        Knowledge Bot
+    </button>
+
+    <!-- Recommendation Agent Selection (Renamed from Recommendation Bot) -->
+    <button class="bot-option" onclick="openBot('recommendation')">
+        <i class="fa-solid fa-motorcycle"></i>
+        Recommendation Agent
+    </button>
+
+</div>
+
+<!-- =====================================================
+     KNOWLEDGE CHATBOT
+===================================================== -->
+
+<div class="chat-window" id="chatWindow">
+
+    <div class="chat-header">
+
+        <h5 id="chatTitle">
+            Automobile AI Bot
+        </h5>
+
+        <div class="close-chat" onclick="closeChat()">
+            <i class="fa-solid fa-xmark"></i>
+        </div>
+
+    </div>
+
+    <div class="chat-messages" id="chatMessages"></div>
+
+    <div class="chat-input-area">
+
+        <div class="chat-input-wrap">
+
+            <input
+                type="text"
+                id="messageInput"
+                class="chat-input"
+                placeholder="Type your message..."
+            >
+
+            <button class="send-btn" onclick="sendMessage()">
+                <i class="fa-solid fa-paper-plane"></i>
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+<!-- =====================================================
+     PREMIUM RECOMMENDATION UI
+===================================================== -->
+
+<div class="recommendation-ui" id="recommendationUI">
+
+    <div class="page">
+
+        <div class="chat-container">
+
+            <!-- HEADER -->
+
+            <div class="chat-header-premium">
+
+                <div class="logo-mark">
+                    <i class="fa-solid fa-motorcycle"></i>
+                </div>
+
+                <div>
+                    <!-- Recommendation Agent Header (Renamed from Honda AI Bike Consultant) -->
+                    <div class="header-title">
+                        Recommendation Agent
+                    </div>
+
+                    <div class="header-sub">
+                        Finds your perfect Automobile
+                    </div>
+                </div>
+
+                <div class="status-pill">
+                    <!-- FAQ BUTTON -->
+                    <button
+                        class="faq-btn"
+                        onclick="openFAQPopup()"
+                    >
+                        <i class="fa-solid fa-circle-question"></i>
+                        FAQ
+                    </button>
+                    <div class="status-dot"></div>
+                    <span class="status-text">Online</span>
+                </div>
+
+                <button
+                    class="premium-close"
+                    onclick="closeRecommendationUI()"
+                >
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+
+            </div>
+
+            <!-- CHAT BODY -->
+
+            <div class="chat-body" id="premiumChatBox">
+
+                <div class="welcome-strip">
+
+                    <i class="fa-solid fa-circle-info"></i>
+
+                    <div>
+
+                        <h4>Welcome Rider</h4>
+
+                        <p>
+                            Tell me about your riding dreams,
+                            comfort preferences, riding style,
+                            and personality.
+                        </p>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <!-- INPUT -->
+
+            <div class="input-area">
+
+                <div class="input-row">
+
+                    <input
+                        type="text"
+                        class="chat-input"
+                        id="premiumMessageInput"
+                        placeholder="Describe your dream riding experience..."
+                    >
+
+                    <button
+                        class="send-btn"
+                        onclick="sendPremiumMessage()"
+                    >
+                        <i class="fa-solid fa-paper-plane"></i>
+                    </button>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<!-- =========================================
+     FAQ POPUP
+========================================= -->
+
+<div
+    class="faq-popup-overlay"
+    id="faqPopup"
+>
+
+    <div class="faq-popup-box">
+
+        <!-- HEADER -->
+
+        <div class="faq-popup-header">
+
+            <h3>
+                Frequently Asked Questions
+            </h3>
+
+            <button
+                class="faq-close-btn"
+                onclick="closeFAQPopup()"
+            >
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+
+        </div>
+
+        <!-- BODY -->
+
+        <div class="faq-popup-body">
+ 
+                <div class="faq-item">
+ 
+                    <h5>
+                        How does the AI Bike Recommendation Agent work?
+                    </h5>
+ 
+                    <p>
+                        The bot understands your riding style, comfort preference, personality, city or highway usage,
+                        touring interest, and emotional connection toward motorcycles. Based on your conversation, it
+                        recommends the most suitable Automobile bike for you.
+                    </p>
+ 
+                </div>
+ 
+                <div class="faq-item">
+ 
+                    <h5>
+                        Is this bot only based on bike specifications?
+                    </h5>
+ 
+                    <p>
+                        No.
+                        The recommendation is not just based on specs like engine power or mileage. The bot also
+                        considers:
+ 
+                        Riding comfort
+ 
+                        Daily usability
+ 
+                        Touring needs
+ 
+                        Sporty vs relaxed riding feel
+ 
+                        Beginner vs experienced rider preference
+ 
+                        Emotional riding experience.
+                    </p>
+ 
+                </div>
+ 
+                <div class="faq-item">
+ 
+                    <h5>
+                        Which Automobile bikes are available in the recommendation system?
+                    </h5>
+ 
+                    <p>
+                        The AI recommendation system includes multiple Automobile motorcycle categories such as:
+ 
+                        Super Sport
+ 
+                        Street/Naked Bikes
+ 
+                        Adventure Bikes
+ 
+                        Touring Bikes
+ 
+                        Cruisers
+ 
+                        Scooters
+ 
+                        Off-Road Bikes
+ 
+                        ATVs.
+                    </p>
+ 
+                </div>
+                <div class="faq-item">
+ 
+                    <h5>
+                        Which Automobile bike is best for beginners?
+                    </h5>
+ 
+                    <p>
+                        For beginners, the bot usually recommends comfortable and confidence-friendly motorcycles
+                        depending on your riding style, such as:
+ 
+                        CB 350
+ 
+                        CB 500 Hornet
+ 
+                        Rebel Series
+ 
+                        NX Series
+ 
+                        The recommendation changes based on your comfort level and usage.
+                    </p>
+ 
+                </div>
+                <div class="faq-item">
+ 
+                    <h5>
+                        Which Automobile bike is best for city riding?
+                    </h5>
+ 
+                    <p>
+                        For daily city riding, traffic handling, and comfort, popular recommendations include:
+ 
+                        CB Series
+ 
+                        Hornet Series
+ 
+                        Scooters
+ 
+                        NX models
+ 
+                        The bot considers mileage, comfort, heat management, and maneuverability.
+                    </p>
+ 
+                </div>
+                <div class="faq-item">
+ 
+                    <h5>
+                        Which Automobile bike is best for highway touring?
+                    </h5>
+ 
+                    <p>
+                        For long-distance touring and highway comfort, the bot may recommend:
+ 
+                        GL 1800 Gold Wing Tour
+ 
+                        Africa Twin Adventure Sports
+ 
+                        NT Touring models
+ 
+                        These bikes are selected for comfort, stability, luggage capability, and touring feel.
+                    </p>
+ 
+                </div>
+                <div class="faq-item">
+ 
+                    <h5>
+                        Which Automobile bike is best for sports riding?
+                    </h5>
+ 
+                    <p>
+                        If you enjoy aggressive riding, track-inspired performance, and sporty design, the system may
+                        suggest:
+ 
+                        CBR 650 R
+ 
+                        CBR 1000RR Fireblade
+ 
+                        CBR Series motorcycles
+ 
+                        Recommendations depend on your experience level and riding confidence.
+                    </p>
+ 
+                </div>
+                <div class="faq-item">
+ 
+                    <h5>
+                        Which Automobile bike is best for adventure riding?
+                    </h5>
+ 
+                    <p>
+                        For off-road capability and adventure touring, the AI may recommend:
+ 
+                        CRF Series
+ 
+                        Africa Twin
+ 
+                        Adventure Sports models
+ 
+                        These bikes are ideal for rough roads, touring, and mixed terrain riding.
+                    </p>
+ 
+                </div>
+                <div class="faq-item">
+ 
+                    <h5>
+                        Which Automobile bike is best for comfort and relaxed cruising?
+                    </h5>
+ 
+                    <p>
+                        For relaxed riding and premium comfort, the system may suggest:
+ 
+                        Rebel 1100
+ 
+                        Gold Wing Tour
+ 
+                        Cruiser category motorcycles
+ 
+                        These bikes focus more on riding feel and comfort rather than aggressive performance.
+                    </p>
+ 
+                </div>
+                <div class="faq-item">
+ 
+                    <h5>
+                        Can the bot compare two Automobile bikes?
+                    </h5>
+ 
+                    <p>
+                        Yes.
+                        You can ask comparisons like:
+ 
+                        CB 650 R vs CBR 650 R
+ 
+                        Africa Twin vs Gold Wing
+ 
+                        Hornet vs Rebel
+ 
+                        The bot explains:
+ 
+                        Riding comfort
+ 
+                        Performance
+ 
+                        Highway feel
+ 
+                        City usability
+ 
+                        Beginner friendliness
+ 
+                        Touring capability.
+                    </p>
+ 
+                </div>
+                <div class="faq-item">
+ 
+                    <h5>
+                        Does the bot recommend bikes based on riding personality?
+                    </h5>
+ 
+                    <p>
+                        Yes.
+                        The recommendation system understands whether you prefer:
+ 
+                        Aggressive sporty riding
+ 
+                        Relaxed cruising
+ 
+                        Adventure touring
+ 
+                        Daily commuting
+ 
+                        Premium luxury feel
+ 
+                        Lightweight city bikes.
+                    </p>
+ 
+                </div>
+                <div class="faq-item">
+ 
+                    <h5>
+                        Can the bot recommend bikes for daily office commute?
+                    </h5>
+ 
+                    <p>
+                        Absolutely.
+                        The bot can suggest motorcycles suitable for:
+ 
+                        Traffic conditions
+ 
+                        Daily comfort
+ 
+                        Fuel efficiency
+ 
+                        Easy handling
+ 
+                        Practical commuting.
+                    </p>
+ 
+                </div>
+                <div class="faq-item">
+ 
+                    <h5>
+                        Can the AI recommend bikes based on comfort instead of speed?
+                    </h5>
+ 
+                    <p>
+                        Yes.
+                        Not every rider wants extreme performance. The bot also recommends motorcycles focused on:
+ 
+                        Comfort
+ 
+                        Relaxed seating
+ 
+                        Smooth riding
+ 
+                        Long-distance usability
+ 
+                        Low stress riding experience.
+                    </p>
+ 
+                </div>
+                <div class="faq-item">
+ 
+                    <h5>
+                        Does the bot recommend bikes for experienced riders?
+                    </h5>
+ 
+                    <p>
+                        Yes.
+                        If you already have riding experience, the system can recommend more powerful and
+                        performance-oriented motorcycles based on your riding confidence.
+                    </p>
+ 
+                </div>
+                <div class="faq-item">
+ 
+                    <h5>
+                        Are scooter recommendations also available?
+                    </h5>
+ 
+                    <p>
+                        Yes.
+                        The recommendation system can also suggest Automobile scooters for:
+ 
+                        Daily commuting
+ 
+                        City travel
+ 
+                        Easy handling
+ 
+                        Mileage-focused users.
+                    </p>
+ 
+                </div>
+                <div class="faq-item">
+ 
+                    <h5>
+                        How accurate are the bike recommendations?
+                    </h5>
+ 
+                    <p>
+                        The recommendations are personalized using:
+ 
+                        AI conversation analysis
+ 
+                        Riding preference understanding
+ 
+                        Automobile motorcycle knowledge
+ 
+                        Personality-based recommendation logic
+ 
+                        Real-time contextual matching from the bike database.
+                    </p>
+ 
+                </div>
+ 
+ 
+            </div>
+ 
+        </div>
+ 
+    </div>
+
+<!-- =========================================
+     LEAD POPUP
+========================================= -->
+
+<div
+    class="lead-popup-overlay"
+    id="leadPopupOverlay"
+>
+
+    <div class="lead-popup-box">
+
+        <div class="lead-popup-header">
+
+            <div
+                class="lead-popup-title"
+                id="leadPopupTitle"
+            >
+                Book a Test Drive
+            </div>
+
+            <button
+                class="lead-popup-close"
+                onclick="closeLeadPopup()"
+            >
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+
+        </div>
+
+        <div
+            class="lead-popup-body"
+            id="leadPopupBody"
+        ></div>
+
+    </div>
+
+</div>
+
+<script>
+
+/* =====================================================
+   VARIABLES
+===================================================== */
+
+let currentBot = "";
+let currentApi = "";
+
+let sessionId = generateSessionId();
+
+const chatbotFab =
+document.getElementById("chatbotFab");
+
+const botSelection =
+document.getElementById("botSelection");
+
+/* =====================================================
+   GENERATE SESSION ID
+===================================================== */
+
+function generateSessionId(){
+
+    return 'session_' +
+    Math.random().toString(36).substring(2) +
+    Date.now();
+
+}
+
+/* =====================================================
+   FAB TOGGLE
+===================================================== */
+
+chatbotFab.addEventListener("click", () => {
+
+    if(botSelection.style.display === "block"){
+
+        botSelection.style.display = "none";
+
+    }else{
+
+        botSelection.style.display = "block";
+
+    }
+
+});
+
+/* =====================================================
+   OPEN BOT
+===================================================== */
+
+function openBot(type){
+
+    botSelection.style.display = "none";
+
+    /* =========================================
+       KNOWLEDGE BOT
+    ========================================= */
+
+    if(type === "knowledge"){
+
+        currentBot = "knowledge";
+
+        currentApi =
+        (window.location.origin && window.location.origin.startsWith("http"))
+            ? `${window.location.origin}/knowledge_chat/knowledge_chat`
+            : "http://localhost:8000/knowledge_chat/knowledge_chat";
+
+        document.getElementById(
+            "chatWindow"
+        ).style.display = "flex";
+
+        document.getElementById(
+            "chatTitle"
+        ).innerHTML = `
+            <i class="fa-solid fa-book"></i>
+            Knowledge Bot
+        `;
+
+        addBotMessage(
+            "Hello! I'm Automobile Knowledge Bot.\n\nAsk me anything about Automobile technologies, engines, safety, and features."
+        );
+
+    }
+
+    /* =========================================
+       RECOMMENDATION AGENT
+    ========================================= */
+
+    else{
+
+        document.getElementById(
+            "recommendationUI"
+        ).style.display = "block";
+
+    }
+
+}
+
+/* =====================================================
+   CLOSE KNOWLEDGE CHAT
+===================================================== */
+
+function closeChat(){
+
+    document.getElementById(
+        "chatWindow"
+    ).style.display = "none";
+
+}
+
+/* =====================================================
+   CLOSE PREMIUM UI
+===================================================== */
+
+function closeRecommendationUI(){
+
+    document.getElementById(
+        "recommendationUI"
+    ).style.display = "none";
+
+}
+
+/* =====================================================
+   ADD MESSAGE
+===================================================== */
+
+function addMessage(text, sender){
+
+    const messages =
+    document.getElementById("chatMessages");
+
+    const message =
+    document.createElement("div");
+
+    message.className =
+    `message ${sender}`;
+
+    const bubble =
+    document.createElement("div");
+
+    bubble.className = "bubble";
+
+    bubble.innerHTML =
+    formatMessage(text);
+
+    message.appendChild(bubble);
+
+    messages.appendChild(message);
+
+    messages.scrollTop =
+    messages.scrollHeight;
+
+}
+
+function addBotMessage(text){
+    addMessage(text, "bot");
+}
+
+/* =====================================================
+   FORMAT
+===================================================== */
+
+function formatMessage(text){
+    if(!text) return "";
+    return text
+    .replace(/\*\*(.*?)\*\*/g, "<b>$1</b>")
+    .replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" target="_blank" style="color:#e60012;text-decoration:underline;word-break:break-all;">$1</a>')
+    .replace(/^[\*\-]\s+(.*)$/gm, "• $1")
+    .replace(/\n/g, "<br>");
+}
+
+/* =====================================================
+   STREAM / TYPEWRITER BOT MESSAGE
+===================================================== */
+
+function streamBotMessage(containerId, text, onComplete){
+
+    const messages = document.getElementById(containerId);
+    if (!messages) return;
+
+    const message = document.createElement("div");
+    message.className = "message bot";
+
+    const bubble = document.createElement("div");
+    bubble.className = "bubble";
+
+    const cursor = document.createElement("span");
+    cursor.className = "streaming-cursor";
+
+    message.appendChild(bubble);
+    messages.appendChild(message);
+
+    const tokens = text.split(/(\s+)/);
+    let currentIndex = 0;
+    let accumulatedText = "";
+
+    function step(){
+        if(currentIndex < tokens.length){
+            accumulatedText += tokens[currentIndex];
+            currentIndex++;
+            bubble.innerHTML = formatMessage(accumulatedText);
+            bubble.appendChild(cursor);
+            messages.scrollTop = messages.scrollHeight;
+            setTimeout(step, 18);
+        } else {
+            cursor.remove();
+            bubble.innerHTML = formatMessage(accumulatedText);
+            messages.scrollTop = messages.scrollHeight;
+            if(onComplete) onComplete();
+        }
+    }
+
+    step();
+}
+
+/* =====================================================
+   SEND KNOWLEDGE MESSAGE
+===================================================== */
+
+async function sendMessage(){
+
+    const input =
+    document.getElementById("messageInput");
+
+    const question =
+    input.value.trim();
+
+    if(!question) return;
+
+    addMessage(question, "user");
+
+    showTypingIndicator();
+
+    input.value = "";
+
+    try{
+
+        const response = await fetch(currentApi, {
+
+            method:"POST",
+
+            headers:{
+                "Content-Type":"application/json"
+            },
+
+            body: JSON.stringify({
+                session_id: sessionId,
+                question: question
+            })
+
+        });
+
+        const data =
+        await response.json();
+
+        removeTypingIndicator();
+
+        let fullAnswer = data.answer || "No response";
+        if(data.sources && data.sources.length > 0){
+            const validSources = data.sources.filter(s => s && s.startsWith("http"));
+            if(validSources.length > 0){
+                fullAnswer += `\n\n**Website Source:**\n` + validSources.slice(0, 2).map(s => `• [${s}](${s})`).join("\n");
+            }
+        }
+
+        streamBotMessage(
+            "chatMessages",
+            fullAnswer
+        );
+
+    }
+
+    catch(error){
+
+        removeTypingIndicator();
+
+        addBotMessage(
+            "Unable to connect to backend."
+        );
+
+    }
+
+}
+
+/* =====================================================
+   PREMIUM RECOMMENDATION AGENT
+===================================================== */
+
+const PREMIUM_API =
+    (window.location.origin && window.location.origin.startsWith("http"))
+        ? `${window.location.origin}/chat`
+        : "http://localhost:8000/chat";
+
+let premiumSessionId =
+generateSessionId();
+
+/* =====================================================
+   ADD PREMIUM MESSAGE
+===================================================== */
+
+function addPremiumMessage(text, sender){
+
+    const messages =
+    document.getElementById(
+        "premiumChatBox"
+    );
+
+    const message =
+    document.createElement("div");
+
+    message.className =
+    `message ${sender}`;
+
+    const bubble =
+    document.createElement("div");
+
+    bubble.className = "bubble";
+
+    bubble.innerHTML =
+    formatMessage(text);
+
+    message.appendChild(bubble);
+
+    messages.appendChild(message);
+
+    messages.scrollTop =
+    messages.scrollHeight;
+
+}
+
+/* =========================================
+   ADD BIKE CARD
+========================================= */
+
+function addBikeCard(
+    bikeName,
+    bikeImage,
+    bikeSource
+){
+
+    if(!bikeName) return;
+
+    const messages =
+    document.getElementById(
+        "premiumChatBox"
+    );
+
+    const wrapper =
+    document.createElement("div");
+
+    wrapper.className =
+    "bike-card-wrapper";
+
+    wrapper.innerHTML = `
+
+        <div class="premium-bike-card">
+
+            <img
+                src="${bikeImage}"
+                class="premium-bike-image"
+                alt="${bikeName}"
+            >
+
+            <div class="premium-bike-body">
+
+                <div class="premium-bike-name">
+                    ${bikeName}
+                </div>
+
+                ${
+                    bikeSource
+                    ?
+                    `
+                    <a
+                        href="${bikeSource}"
+                        target="_blank"
+                        class="explore-btn"
+                    >
+                        Explore Bike
+                        <i class="fa-solid fa-arrow-right"></i>
+                    </a>
+                    `
+                    :
+                    ""
+                }
+
+                <button
+                    class="action-btn testdrive-btn"
+                    onclick="openLeadPopup(
+                        'testdrive',
+                        '${bikeName}'
+                    )"
+                >
+                    <i class="fa-solid fa-road"></i>
+                    Book a Test Drive
+                </button>
+
+                <button
+                    class="action-btn expert-btn"
+                    onclick="openLeadPopup(
+                        'expert',
+                        '${bikeName}'
+                    )"
+                >
+                    <i class="fa-solid fa-headset"></i>
+                    Connect to Experts
+                </button>
+
+            </div>
+
+        </div>
+
+    `;
+
+    messages.appendChild(wrapper);
+
+    messages.scrollTop =
+    messages.scrollHeight;
+
+}
+/* =====================================================
+   SEND PREMIUM MESSAGE
+===================================================== */
+
+async function sendPremiumMessage(){
+
+    const input =
+    document.getElementById(
+        "premiumMessageInput"
+    );
+
+    const question =
+    input.value.trim();
+
+    if(!question) return;
+
+    addPremiumMessage(
+        question,
+        "user"
+    );
+
+    showPremiumTyping();
+
+    input.value = "";
+
+    try{
+
+        const response = await fetch(
+            `${PREMIUM_API}/chat`,
+            {
+                method:"POST",
+
+                headers:{
+                    "Content-Type":"application/json"
+                },
+
+                body: JSON.stringify({
+                    session_id: premiumSessionId,
+                    message: question
+                })
+            }
+        );
+
+        const data =
+        await response.json();
+
+        removePremiumTyping();
+
+        streamBotMessage(
+            "premiumChatBox",
+            data.bot || "No response",
+            function(){
+                /* =========================
+                   BIKE CARD
+                ========================= */
+                if(data.recommended_bike){
+                    addBikeCard(
+                        data.recommended_bike,
+                        data.bike_image || "",
+                        data.bike_source || ""
+                    );
+                }
+            }
+        );
+
+    }
+
+    catch(error){
+
+        console.error(error);
+
+        removePremiumTyping();
+
+        addPremiumMessage(
+            "Unable to connect to AI backend.",
+            "bot"
+        );
+
+    }
+
+}
+
+/* =========================================
+   OPEN FAQ POPUP
+========================================= */
+
+function openFAQPopup(){
+
+    document.getElementById(
+        "faqPopup"
+    ).style.display = "flex";
+
+}
+
+/* =========================================
+   CLOSE FAQ POPUP
+========================================= */
+
+function closeFAQPopup(){
+
+    document.getElementById(
+        "faqPopup"
+    ).style.display = "none";
+
+}
+
+/* =====================================================
+   ENTER KEY SUPPORT
+===================================================== */
+
+document.getElementById("messageInput")
+.addEventListener("keypress", function(e){
+
+    if(e.key === "Enter"){
+        sendMessage();
+    }
+
+});
+
+document.getElementById(
+    "premiumMessageInput"
+)
+.addEventListener("keypress", function(e){
+
+    if(e.key === "Enter"){
+        sendPremiumMessage();
+    }
+
+});
+
+let currentLeadType = "";
+let currentBikeName = "";
+
+function openLeadPopup(type, bikeName){
+
+    currentLeadType = type;
+    currentBikeName = bikeName;
+
+    document.getElementById(
+        "leadPopupOverlay"
+    ).style.display = "flex";
+
+    const title =
+    type === "testdrive"
+    ?
+    "Book a Test Drive"
+    :
+    "Connect to Experts";
+
+    document.getElementById(
+        "leadPopupTitle"
+    ).innerText = title;
+
+    renderLeadForm();
+
+}
+
+function closeLeadPopup(){
+
+    document.getElementById(
+        "leadPopupOverlay"
+    ).style.display = "none";
+
+}
+
+function renderLeadForm(){
+
+    const body =
+    document.getElementById(
+        "leadPopupBody"
+    );
+
+    body.innerHTML = `
+
+        <div class="lead-form-group">
+
+            <label>Bike Name</label>
+
+            <input
+                type="text"
+                class="lead-form-input"
+                id="bikeName"
+                value="${currentBikeName}"
+                readonly
+            >
+
+        </div>
+
+        <div class="lead-form-group">
+
+            <label>Name *</label>
+
+            <input
+                type="text"
+                class="lead-form-input mandatory"
+                id="leadName"
+            >
+
+        </div>
+
+        <div class="lead-form-group">
+
+            <label>Phone Number *</label>
+
+            <input
+                type="tel"
+                class="lead-form-input mandatory"
+                id="leadPhone"
+            >
+
+        </div>
+
+        <div class="lead-form-group">
+
+            <label>Email *</label>
+
+            <input
+                type="email"
+                class="lead-form-input mandatory"
+                id="leadEmail"
+            >
+
+        </div>
+
+        <div class="lead-form-group">
+
+            <label>Address</label>
+
+            <textarea
+                class="lead-form-input"
+                rows="3"
+                id="leadAddress"
+            ></textarea>
+
+        </div>
+
+        ${
+            currentLeadType === "testdrive"
+            ?
+            `
+            <div class="lead-form-group">
+
+                <label>Test Drive Location *</label>
+
+                <input
+                    type="text"
+                    class="lead-form-input mandatory"
+                    id="leadLocation"
+                >
+
+            </div>
+
+            <div class="lead-form-group">
+
+                <label>Date *</label>
+
+                <input
+                    type="date"
+                    class="lead-form-input mandatory"
+                    id="leadDate"
+                    min="${new Date().toISOString().split('T')[0]}"
+                    onclick="this.showPicker()"
+                >
+            </div>
+            `
+            :
+            ""
+        }
+
+        <div class="submit-btn-wrapper">
+
+            <button
+                class="lead-submit-btn"
+                id="leadSubmitBtn"
+                disabled
+                onclick="submitLeadForm()"
+            >
+                Submit
+            </button>
+
+        </div>
+
+    `;
+
+    attachValidation();
+
+}
+
+function attachValidation(){
+
+    const mandatoryFields =
+    document.querySelectorAll(".mandatory");
+
+    mandatoryFields.forEach(field => {
+
+        field.addEventListener(
+            "input",
+            validateLeadForm
+        );
+
+    });
+
+}
+
+function validateLeadForm(){
+
+    const mandatoryFields =
+    document.querySelectorAll(".mandatory");
+
+    let valid = true;
+
+    mandatoryFields.forEach(field => {
+
+        if(!field.value.trim()){
+
+            valid = false;
+
+        }
+
+    });
+
+    const submitBtn =
+    document.getElementById(
+        "leadSubmitBtn"
+    );
+
+    if(valid){
+
+        submitBtn.disabled = false;
+        submitBtn.classList.add("active");
+
+    }else{
+
+        submitBtn.disabled = true;
+        submitBtn.classList.remove("active");
+
+    }
+
+}
+
+function submitLeadForm(){
+
+    const body =
+    document.getElementById(
+        "leadPopupBody"
+    );
+
+    const successMessage =
+    currentLeadType === "testdrive"
+    ?
+    "Test Drive Booked Successfully"
+    :
+    "Thank You for your interest our experts will contact you shortly";
+
+    body.innerHTML = `
+
+        <div class="success-box">
+
+            <i class="fa-solid fa-circle-check"></i>
+
+            <h3>Success</h3>
+
+            <p>
+                ${successMessage}
+            </p>
+
+        </div>
+
+    `;
+
+}
+
+/* =====================================================
+   KNOWLEDGE BOT TYPING ANIMATION
+===================================================== */
+
+function showTypingIndicator(){
+
+    const messages =
+    document.getElementById("chatMessages");
+
+    const typing =
+    document.createElement("div");
+
+    typing.className =
+    "message bot typing-message";
+
+    typing.id = "typingIndicator";
+
+    typing.innerHTML = `
+        <div class="bubble typing-bubble">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+    `;
+
+    messages.appendChild(typing);
+
+    messages.scrollTop =
+    messages.scrollHeight;
+
+}
+
+function removeTypingIndicator(){
+
+    const typing =
+    document.getElementById("typingIndicator");
+
+    if(typing){
+        typing.remove();
+    }
+
+}
+
+/* =====================================================
+   RECOMMENDATION AGENT TYPING ANIMATION 
+===================================================== */
+
+function showPremiumTyping(){
+
+    const messages =
+    document.getElementById(
+        "premiumChatBox"
+    );
+
+    const typing =
+    document.createElement("div");
+
+    typing.className =
+    "message bot typing-message";
+
+    typing.id = "premiumTyping";
+
+    typing.innerHTML = `
+        <div class="bubble typing-bubble">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+    `;
+
+    messages.appendChild(typing);
+
+    messages.scrollTop =
+    messages.scrollHeight;
+
+}
+
+function removePremiumTyping(){
+
+    const typing =
+    document.getElementById(
+        "premiumTyping"
+    );
+
+    if(typing){
+        typing.remove();
+    }
+
+}
+
+
+
+</script>
+
+</body>
+</html>

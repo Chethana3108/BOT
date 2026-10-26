@@ -3,7 +3,6 @@ from pydantic import BaseModel
 import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin, urlparse
-from langchain_text_splitters import RecursiveCharacterTextSplitter
 from sentence_transformers import SentenceTransformer
 from dotenv import load_dotenv
 import faiss
@@ -12,13 +11,16 @@ import uvicorn
 import os
 import json
 import re
+import threading
 from concurrent.futures import ThreadPoolExecutor
+
+crawl_lock = threading.Lock()
 
 # =====================LOAD ENV===========================
 
 load_dotenv()
 
-DEEPSEEK_API_KEY = "sk-b8d54f473602495ca415df013c0892aa"
+DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY", "")
 
 
 # =====================CONFIG===========================
@@ -62,7 +64,29 @@ index = faiss.IndexFlatL2(dimension)
 
 # ================TEXT SPLITTER=======================
 
-text_splitter = RecursiveCharacterTextSplitter(
+class SimpleTextSplitter:
+    def __init__(self, chunk_size=800, chunk_overlap=150):
+        self.chunk_size = chunk_size
+        self.chunk_overlap = chunk_overlap
+
+    def split_text(self, text):
+        if not text:
+            return []
+        chunks = []
+        start = 0
+        text_len = len(text)
+        step = max(1, self.chunk_size - self.chunk_overlap)
+        while start < text_len:
+            end = min(text_len, start + self.chunk_size)
+            chunk = text[start:end].strip()
+            if chunk:
+                chunks.append(chunk)
+            if end >= text_len:
+                break
+            start += step
+        return chunks
+
+text_splitter = SimpleTextSplitter(
     chunk_size=800,
     chunk_overlap=150
 )
@@ -77,10 +101,16 @@ class ChatRequest(BaseModel):
 
 def clean_text(text):
 
+    # Strip repeated navigation bar and boilerplate text
+    text = re.sub(
+        r'OUR PRODUCTS\s+AUTOMOBILES\s+MOTORCYCLES.*?SAFETY & TECHNOLOGY\s+HONDA SUSTAINABILITY',
+        ' ',
+        text,
+        flags=re.IGNORECASE
+    )
+    text = text.replace("Loading component...", " ")
     text = re.sub(r'\s+', ' ', text)
-
     text = text.replace("\n", " ")
-
     text = text.strip()
 
     return text
@@ -94,8 +124,7 @@ def is_valid_url(url):
     if parsed.netloc != "www.honda-mideast.com":
         return False
 
-    url = url.lower()
-
+    url = url.lower().rstrip("/")
 
     blocked_extensions = (
         ".jpg",
@@ -113,7 +142,6 @@ def is_valid_url(url):
     if url.endswith(blocked_extensions):
         return False
 
-
     blocked_keywords = [
         "automobiles",
         "motorcycle",
@@ -126,7 +154,8 @@ def is_valid_url(url):
         "instagram",
         "youtube",
         "linkedin",
-        "twitter"
+        "twitter",
+        "privacy-policy"
     ]
 
     if any(keyword in url for keyword in blocked_keywords):
@@ -209,46 +238,41 @@ def scrape_page(url):
 
 def crawl(url, depth=0):
 
+    url = url.rstrip("/")
+
     if depth > CRAWL_DEPTH:
         return
 
-    if url in visited:
-        return
-
-    if len(visited) >= MAX_PAGES:
-        return
-
-    visited.add(url)
+    with crawl_lock:
+        if url in visited:
+            return
+        if len(visited) >= MAX_PAGES:
+            return
+        visited.add(url)
 
     print(f"Crawling: {url}")
 
     data = scrape_page(url)
 
-    if not data:
+    if not data or not data.get("text"):
         return
 
     chunks = text_splitter.split_text(data["text"])
 
-    for chunk in chunks:
+    with crawl_lock:
+        for chunk in chunks:
+            documents.append(chunk)
+            metadata_store.append({
+                "source": data["url"]
+            })
 
-        documents.append(chunk)
-
-        metadata_store.append({
-            "source": data["url"]
-        })
-
-    with ThreadPoolExecutor(max_workers=3) as executor:
-
-        futures = []
-
-        for link in data["links"]:
-
-            futures.append(
-                executor.submit(crawl, link, depth + 1)
-            )
-
-        for future in futures:
-            future.result()
+    if depth < CRAWL_DEPTH:
+        for link in data.get("links", []):
+            clean_link = link.rstrip("/")
+            with crawl_lock:
+                already_visited = clean_link in visited
+            if not already_visited:
+                crawl(clean_link, depth + 1)
 
 # ===============BUILD VECTOR DB======================
 
@@ -319,7 +343,7 @@ def retrieve_context(question):
 
     for idx in indices[0]:
 
-        if idx < len(documents):
+        if 0 <= idx < len(documents):
 
             retrieved_chunks.append({
                 "content": documents[idx],
@@ -359,34 +383,32 @@ def ask_deepseek(session_id, question, context):
     """
 
     prompt = f"""
-You are Honda Middle East's intelligent AI assistant.
+You are the official Honda AI Knowledge Assistant.
+
+CRITICAL RULE - STRICT WEBSITE CONTENT GROUNDING (MANDATORY):
+1. You must answer ONLY and EXCLUSIVELY using the facts, specifications, and details provided in the "Website Knowledge Context" below (extracted directly from the official Honda website content pages).
+2. DO NOT use external general knowledge, assumptions, or information not present in the Website Knowledge Context.
+3. If the answer to the user's question cannot be found or verified in the Website Knowledge Context below, you MUST NOT guess or make up an answer. State clearly:
+   "I could not find information on this in the official Honda website pages. Please check the official Honda website (www.honda-mideast.com) or contact your nearest authorized Honda dealer."
+4. If the question is outside the scope of Honda (e.g. general science, electricity transformers, AI/machine learning, biology, other car brands, trivia, etc.), refuse immediately with:
+   "I am specifically designed to assist with Honda products, vehicles, technologies, and services based on official website documentation. I cannot assist with topics outside of Honda."
 
 Your behavior:
-- Answer like a knowledgeable human assistant
-- Sound natural and conversational
-- Explain concepts clearly and confidently
-- Do NOT sound robotic or like documentation
-- Maintain conversation continuity
-- Understand follow-up questions
-- Use previous conversation memory
-- Use ONLY the provided context
-- Never invent information
-- If information is missing, clearly say so
-- Never hallucinate
+- Answer like a knowledgeable assistant using ONLY the facts explicitly stated in the website content
+- Keep responses concise, structured, and summarized (use short bullet points)
+- Do NOT output long paragraphs, disclaimers, or walls of text
+- Ground every single specification, model, and feature directly in the Website Knowledge Context below
 
-Your goal:
-Help users understand Honda technologies, safety systems, and innovations in a friendly and professional way.
+Website Knowledge Context (from official Honda website pages):
+{combined_context}
 
 Conversation History:
 {conversation_history}
 
-Knowledge Context:
-{combined_context}
-
-Current User Question:
+User Question:
 {question}
 
-Answer naturally:
+Answer based ONLY on the Website Knowledge Context above:
 """
 
     url = "https://api.deepseek.com/chat/completions"
@@ -401,15 +423,15 @@ Answer naturally:
         "messages": [
             {
                 "role": "system",
-                "content": "You are a highly intelligent Honda expert assistant."
+                "content": "You are the official Honda AI Knowledge Assistant. You answer questions strictly and exclusively from the provided official website content pages. If the information is not present in the website context, state that it is not available in the website content."
             },
             {
                 "role": "user",
                 "content": prompt
             }
         ],
-        "temperature": 0.3,
-        "max_tokens": 1000
+        "temperature": 0.0,
+        "max_tokens": 450
     }
 
     response = requests.post(
@@ -441,6 +463,10 @@ Answer naturally:
 
 # ================= STARTUP ====================
 
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+INDEX_FILE = os.path.join(BASE_DIR, "honda_index.faiss")
+DOCS_FILE = os.path.join(BASE_DIR, "documents.json")
+
 @app.on_event("startup")
 def startup_event():
 
@@ -448,39 +474,34 @@ def startup_event():
     global metadata_store
     global index
 
-    print("\nStarting Honda Knowledge Base Builder...\n")
+    if os.path.exists(INDEX_FILE) and os.path.exists(DOCS_FILE):
 
-    if os.path.exists("honda_index.faiss"):
+        print("\nLoading existing FAISS index and documents...\n")
 
-        print("Loading existing FAISS index...\n")
+        index = faiss.read_index(INDEX_FILE)
 
-        index = faiss.read_index(
-            "honda_index.faiss"
-        )
-
-        with open(
-            "documents.json",
-            "r",
-            encoding="utf-8"
-        ) as f:
+        with open(DOCS_FILE, "r", encoding="utf-8") as f:
 
             data = json.load(f)
 
-            documents = data["documents"]
+            documents = data.get("documents", [])
 
-            metadata_store = data["metadata"]
+            metadata_store = data.get("metadata", [])
 
-        print("\nKnowledge Base Loaded\n")
+        print(f"Knowledge Base Loaded ({len(documents)} document chunks)\n")
 
     else:
 
-        print("\nNo existing index found\n")
+        print("\nNo existing index found, building knowledge base...\n")
 
         crawl(BASE_URL)
 
         build_vector_db()
 
-    print("\nKnowledge Base Ready\n")
+    print("Knowledge Base Ready\n")
+
+# Auto-initialize on import so memory is always loaded
+startup_event()
 
 
 # =========== ROOT ===================
@@ -506,33 +527,23 @@ def chat(request: ChatRequest):
 
     context = retrieve_context(question)
 
-    if not context:
-
-        return {
-            "session_id": session_id,
-            "question": question,
-            "answer": "Knowledge base is empty.",
-            "sources": []
-        }
-
     answer = ask_deepseek(
         session_id,
         question,
-        context
+        context or []
     )
 
     sources = []
-
-    for item in context:
-
-        sources.append(
-            item["metadata"]["source"]
-        )
+    if context:
+        for item in context:
+            src = item.get("metadata", {}).get("source", "")
+            if src and src not in sources:
+                sources.append(src)
 
     return {
         "session_id": session_id,
         "question": question,
         "answer": answer,
-        "sources": list(set(sources))
+        "sources": sources
     }
 

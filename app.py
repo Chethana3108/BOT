@@ -13,22 +13,11 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 from bs4 import BeautifulSoup
 
-from langchain_openai import ChatOpenAI
-from langchain_huggingface import HuggingFaceEmbeddings
-from langchain_community.vectorstores import FAISS
-from langchain_text_splitters import RecursiveCharacterTextSplitter
+from sentence_transformers import SentenceTransformer
+import faiss
+import numpy as np
 from langchain_classic.memory import ConversationBufferMemory
 from langchain_core.documents import Document
-
-# =====================================================
-# SELENIUM IMPORTS
-# =====================================================
-
-from selenium import webdriver
-from selenium.webdriver.common.by import By
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.chrome.options import Options
-from webdriver_manager.chrome import ChromeDriverManager
 
 # =====================================================
 # LOAD ENV
@@ -36,7 +25,7 @@ from webdriver_manager.chrome import ChromeDriverManager
 
 load_dotenv()
 
-DEEPSEEK_API_KEY = "sk-b8d54f473602495ca415df013c0892aa"
+DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY", "")
 
 # =====================================================
 # FASTAPI APP
@@ -63,84 +52,51 @@ BASE_URL = "https://www.honda-mideast.com"
 LISTING_URL = "https://www.honda-mideast.com/en/motorcycle#listing"
 
 # =====================================================
-# SELENIUM DRIVER
+# LOAD OR SCRAPE HONDA BIKES DATA
 # =====================================================
 
-print("\nStarting Selenium Driver...")
-
-options = Options()
-
-options.add_argument("--headless")
-options.add_argument("--window-size=1920,1080")
-options.add_argument("--disable-gpu")
-options.add_argument("--no-sandbox")
-options.add_argument("--disable-dev-shm-usage")
-
-driver = webdriver.Chrome(
-    service=Service(ChromeDriverManager().install()),
-    options=options
-)
-
-# =====================================================
-# SCRAPE HONDA WEBSITE
-# =====================================================
-
-print("\nFetching Honda bikes...")
-
-html = requests.get(LISTING_URL).text
-
-soup = BeautifulSoup(html, "lxml")
-
-explore_links = set()
-
-for a in soup.find_all("a", href=True):
-
-    text = a.get_text(strip=True).upper()
-
-    if "EXPLORE" in text:
-
-        href = a["href"]
-
-        if href.startswith("http"):
-            explore_links.add(href)
-        else:
-            explore_links.add(BASE_URL + href)
-
-print(f"\nFound {len(explore_links)} bike pages")
-
-# =====================================================
-# EXTRACT BIKE DETAILS + IMAGE
-# =====================================================
-
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+BIKES_DATA_FILE = os.path.join(BASE_DIR, "bikes_data.json")
 documents = []
 
-# Track seen titles to skip duplicate bike pages
-seen_titles = set()
-
-for url in explore_links:
-
+if os.path.exists(BIKES_DATA_FILE):
+    print(f"\nLoading Honda bikes from cached {BIKES_DATA_FILE}...")
     try:
+        with open(BIKES_DATA_FILE, "r", encoding="utf-8") as f:
+            cached_data = json.load(f)
+        for item in cached_data:
+            doc = Document(
+                page_content=item.get("content", ""),
+                metadata={
+                    "bike_name": item.get("bike_name", ""),
+                    "source": item.get("source", ""),
+                    "image": item.get("image", "")
+                }
+            )
+            documents.append(doc)
+        print(f"Loaded {len(documents)} bikes from cache.")
+    except Exception as e:
+        print(f"Error loading {BIKES_DATA_FILE}: {e}")
 
-        print("\nScraping:", url)
+if not documents:
+    print("\nFetching Honda bikes online...")
+    try:
+        html = requests.get(LISTING_URL, timeout=15).text
+        soup = BeautifulSoup(html, "html.parser")
 
-        # =========================================
-        # NORMAL HTML SCRAPING
-        # =========================================
+        explore_links = set()
+        for a in soup.find_all("a", href=True):
+            text = a.get_text(strip=True).upper()
+            if "EXPLORE" in text:
+                href = a["href"]
+                if href.startswith("http"):
+                    explore_links.add(href)
+                else:
+                    explore_links.add(BASE_URL + href)
 
-        bike_html = requests.get(url).text
+        print(f"\nFound {len(explore_links)} bike pages")
 
-        bike_soup = BeautifulSoup(bike_html, "lxml")
-
-        # =========================================
-        # EXTRACT BIKE NAME FROM URL SLUG
-        # =========================================
-
-        slug = url.rstrip("/").split("/")[-1]
-
-        slug_clean = _re.sub(r'^[Nn]ew[-\s]', '', slug)
-
-        parts = _re.split(r'[-_\s]+', slug_clean)
-
+        seen_titles = set()
         MODEL_CODES = {
             "cbr", "crf", "cbf", "cb", "gl", "nc", "trx", "cmx", "sp", "rr",
             "dct", "atv", "tm", "adv", "xadv"
@@ -156,157 +112,188 @@ for url in explore_links:
                 return p.upper()
             return p.capitalize()
 
-        title = " ".join(format_part(p) for p in parts if p)
+        for url in explore_links:
+            try:
+                bike_html = requests.get(url, timeout=10).text
+                bike_soup = BeautifulSoup(bike_html, "html.parser")
 
-        print(f"  Title resolved: '{title}' (from slug: '{slug}')")
+                slug = url.rstrip("/").split("/")[-1]
+                slug_clean = _re.sub(r'^[Nn]ew[-\s]', '', slug)
+                parts = _re.split(r'[-_\s]+', slug_clean)
+                title = " ".join(format_part(p) for p in parts if p)
 
-        if title in seen_titles:
-            print(f"  Skipping duplicate: '{title}'")
-            continue
+                if "crf 1100" in title.lower() and "sports" not in title.lower() and "africa twin" not in title.lower():
+                    title = "CRF 1100 Africa Twin"
+                elif "crf 1100" in title.lower() and "sports" in title.lower() and "africa twin" not in title.lower():
+                    title = "CRF 1100 Africa Twin Adventure Sports"
+                elif "cb 750" in title.lower() and "hornet" not in title.lower():
+                    title = "CB 750 Hornet"
 
-        seen_titles.add(title)
+                if title in seen_titles:
+                    continue
+                seen_titles.add(title)
 
-        content_parts = []
+                content_parts = []
+                for tag in bike_soup.find_all(["h1", "h2", "h3", "p", "li"]):
+                    text = tag.get_text(" ", strip=True)
+                    if len(text) > 20:
+                        content_parts.append(text)
+                content = "\n".join(content_parts)
 
-        for tag in bike_soup.find_all(["h1", "h2", "h3", "p", "li"]):
+                image_url = ""
+                for img in bike_soup.find_all("img"):
+                    src = img.get("src") or img.get("data-src") or ""
+                    if src.startswith("/"):
+                        src = BASE_URL + src
+                    src_l = src.lower()
+                    if any(k in src_l for k in ["goldwing", "rebel", "africa", "hornet", "cbr", "crf", "cb", "trx", "forza", "xadv", "nc750", "banner"]):
+                        if not any(k in src_l for k in ["logo", "app-ios", "google-play", "ico", "bike-colors", "car-color", "icon", "h=34"]):
+                            image_url = src
+                            break
 
-            text = tag.get_text(" ", strip=True)
+                doc = Document(
+                    page_content=content,
+                    metadata={
+                        "bike_name": title,
+                        "source": url,
+                        "image": image_url
+                    }
+                )
+                documents.append(doc)
+            except Exception as e:
+                print(f"Error scraping {url}: {e}")
 
-            if len(text) > 20:
-                content_parts.append(text)
-
-        content = "\n".join(content_parts)
-
-        # =========================================
-        # IMAGE EXTRACTION USING SELENIUM
-        # =========================================
-
-        image_url = ""
-
-        try:
-
-            design_url = url + "#design"
-
-            driver.get(design_url)
-
-            time.sleep(4)
-
-            driver.execute_script("""
-            document.getElementById('design').scrollIntoView();
-            """)
-
-            time.sleep(3)
-
-            product_div = driver.find_element(
-                By.CSS_SELECTOR,
-                "#design .product .image"
-            )
-
-            img = product_div.find_element(By.TAG_NAME, "img")
-
-            image_url = img.get_attribute("src")
-
-            print("Image Found:", image_url)
-
-        except Exception as img_error:
-
-            print("Image extraction failed")
-            print(img_error)
-
-        # =========================================
-        # CREATE DOCUMENT
-        # =========================================
-
-        doc = Document(
-            page_content=content,
-            metadata={
-                "bike_name": title,
-                "source": url,
-                "image": image_url
-            }
-        )
-
-        documents.append(doc)
-
+        print(f"\nLoaded {len(documents)} bikes from web")
     except Exception as e:
-
-        print("Error scraping:", url)
-        print(e)
-
-# =====================================================
-# CLOSE SELENIUM DRIVER
-# =====================================================
-
-driver.quit()
-
-print(f"\nLoaded {len(documents)} bikes")
+        print(f"Error fetching bike list: {e}")
 
 # =====================================================
 # SAVE SCRAPED DATA
 # =====================================================
 
-bike_json_data = []
+if not os.path.exists(BIKES_DATA_FILE) and documents:
+    bike_json_data = []
 
-for d in documents:
+    for d in documents:
 
-    bike_json_data.append({
-        "bike_name": d.metadata.get("bike_name"),
-        "source": d.metadata.get("source"),
-        "image": d.metadata.get("image"),
-        "content": d.page_content
-    })
+        bike_json_data.append({
+            "bike_name": d.metadata.get("bike_name"),
+            "source": d.metadata.get("source"),
+            "image": d.metadata.get("image"),
+            "content": d.page_content
+        })
 
-with open("bikes_data.json", "w", encoding="utf-8") as f:
+    with open(BIKES_DATA_FILE, "w", encoding="utf-8") as f:
 
-    json.dump(
-        bike_json_data,
-        f,
-        ensure_ascii=False,
-        indent=4
-    )
+        json.dump(
+            bike_json_data,
+            f,
+            ensure_ascii=False,
+            indent=4
+        )
 
-print("\nBike data saved locally")
+    print("\nBike data saved locally")
 
 # =====================================================
 # SPLIT DOCUMENTS
 # =====================================================
 
-splitter = RecursiveCharacterTextSplitter(
-    chunk_size=1200,
-    chunk_overlap=200
-)
+class SimpleTextSplitter:
+    def __init__(self, chunk_size=1200, chunk_overlap=200):
+        self.chunk_size = chunk_size
+        self.chunk_overlap = chunk_overlap
 
+    def split_documents(self, docs):
+        result = []
+        for doc in docs:
+            text = doc.page_content
+            text_len = len(text)
+            step = max(1, self.chunk_size - self.chunk_overlap)
+            start = 0
+            while start < text_len:
+                end = min(text_len, start + self.chunk_size)
+                chunk = text[start:end].strip()
+                if chunk:
+                    result.append(Document(page_content=chunk, metadata=doc.metadata))
+                if end >= text_len:
+                    break
+                start += step
+        return result
+
+splitter = SimpleTextSplitter(chunk_size=1200, chunk_overlap=200)
 docs = splitter.split_documents(documents)
-
-# =====================================================
-# EMBEDDINGS
-# =====================================================
-
-print("\nCreating embeddings...")
-
-embeddings = HuggingFaceEmbeddings(
-    model_name="sentence-transformers/all-MiniLM-L6-v2"
-)
 
 # =====================================================
 # VECTOR DATABASE
 # =====================================================
 
-vector_db = FAISS.from_documents(
-    docs,
-    embeddings
-)
+class SimpleVectorStore:
+    def __init__(self, docs, model_name="sentence-transformers/all-MiniLM-L6-v2"):
+        self.docs = docs
+        print("\nLoading embedding model for bike recommendation...")
+        self.encoder = SentenceTransformer(model_name)
+        print(f"Embedding {len(docs)} bike document chunks...")
+        texts = [d.page_content for d in docs] if docs else ["honda motorcycle"]
+        embeddings = self.encoder.encode(texts, show_progress_bar=False)
+        embeddings = np.array(embeddings).astype("float32")
+        self.index = faiss.IndexFlatL2(embeddings.shape[1])
+        self.index.add(embeddings)
+        print("Vector DB Ready")
 
-print("\nVector DB Ready")
+    def similarity_search(self, query, k=4):
+        if not self.docs or self.index.ntotal == 0:
+            return []
+        query_vec = np.array(self.encoder.encode([query])).astype("float32")
+        distances, indices = self.index.search(query_vec, min(k, len(self.docs)))
+        results = []
+        for idx in indices[0]:
+            if 0 <= idx < len(self.docs):
+                results.append(self.docs[idx])
+        return results
+
+vector_db = SimpleVectorStore(docs)
 
 # =====================================================
 # DEEPSEEK LLM
 # =====================================================
 
-llm = ChatOpenAI(
-    model="deepseek-chat",
+class DeepSeekLLM:
+    def __init__(self, api_key, model="deepseek-chat", temperature=0.8):
+        self.api_key = api_key
+        self.model = model
+        self.temperature = temperature
+        self.url = "https://api.deepseek.com/chat/completions"
+
+    def invoke(self, prompt):
+        headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "Content-Type": "application/json"
+        }
+        payload = {
+            "model": self.model,
+            "messages": [
+                {"role": "system", "content": "You are a premium AI motorcycle recommendation expert."},
+                {"role": "user", "content": prompt}
+            ],
+            "temperature": self.temperature
+        }
+        try:
+            res = requests.post(self.url, headers=headers, json=payload, timeout=45)
+            if res.status_code == 200:
+                c = res.json()["choices"][0]["message"]["content"]
+            else:
+                c = "I am currently unable to generate a recommendation."
+        except Exception:
+            c = "I am currently unable to generate a recommendation."
+        
+        class LLMResponse:
+            def __init__(self, text):
+                self.content = text
+        return LLMResponse(c)
+
+llm = DeepSeekLLM(
     api_key=DEEPSEEK_API_KEY,
-    base_url="https://api.deepseek.com",
+    model="deepseek-chat",
     temperature=0.8
 )
 
@@ -362,9 +349,26 @@ def _keyword_overlap(extracted_norm, bike_norm):
     return len(overlap) / len(bike_words)
 
 
+BIKE_ALIASES = {
+    "CRF 1100": ["africa twin", "crf 1100", "crf1100", "crf 1100 africa twin"],
+    "CRF 1100 Adventure Sports": ["africa twin adventure sports", "crf 1100 adventure", "adventure sports"],
+    "CB 750": ["hornet", "cb 750", "cb750", "cb 750 hornet", "hornet 750"],
+    "CBR1000RR R SP Fireblade": ["fireblade", "cbr 1000", "cbr1000rr", "cbr1000", "sp fireblade"],
+    "GL 1800 Goldwing": ["goldwing", "gold wing", "gl 1800", "gl1800"],
+    "GL 1800 Goldwing Tour": ["goldwing tour", "gold wing tour", "gl 1800 tour"],
+    "CMX Rebel 500": ["rebel 500", "rebel", "cmx 500"],
+    "CMX Rebel 1100": ["rebel 1100", "cmx 1100"],
+    "X ADV": ["x adv", "xadv", "x-adv"],
+    "CB 1000": ["cb 1000", "cb1000", "cb1000r"],
+    "CBR 600 RR": ["cbr 600", "cbr600rr", "cbr 600 rr"],
+    "CBR 650 R": ["cbr 650", "cbr650r", "cbr 650 r"],
+    "NC 750 X": ["nc 750", "nc750x", "nc 750 x"]
+}
+
+
 def _compute_score(extracted_raw, bike_name_raw):
     """
-    Runs 6 strategies and returns the highest score.
+    Runs multi-strategy scoring with alias resolution and coverage penalty.
     """
     ext_norm = _normalize(extracted_raw)
     bike_norm = _normalize(bike_name_raw)
@@ -372,15 +376,29 @@ def _compute_score(extracted_raw, bike_name_raw):
     ext_raw = extracted_raw.lower().strip()
     bike_raw = bike_name_raw.lower().strip()
 
+    # Exact match gets 1.0
+    if ext_norm == bike_norm or ext_raw == bike_raw:
+        return 1.0
+
+    # Check aliases for exact or high-ratio match
+    aliases = BIKE_ALIASES.get(bike_name_raw, [])
+    for alias in aliases:
+        alias_norm = _normalize(alias)
+        if ext_norm == alias_norm:
+            return 0.99
+        if alias_norm in ext_norm or ext_norm in alias_norm:
+            ratio = min(len(alias_norm), len(ext_norm)) / max(len(alias_norm), len(ext_norm))
+            if ratio > 0.6:
+                return 0.90 + (0.08 * ratio)
+
     s1 = _fuzzy(ext_norm, bike_norm)
     s2 = _fuzzy(ext_raw, bike_raw)
     s3 = _keyword_overlap(ext_norm, bike_norm)
-    s4 = 1.0 if bike_norm and bike_norm in ext_norm else 0.0
-    s5 = 1.0 if ext_norm and ext_norm in bike_norm else 0.0
 
-    # s6: raw word overlap — fraction of bike's raw words found in extracted
-    # This catches cases like extracted="cb 750 hornet", bike="CB 750 Hornet"
-    # where normalization alone might miss short tokens
+    # Substring score weighted by length ratio to prevent short words from matching everything
+    s4 = (len(bike_norm) / len(ext_norm)) * 0.9 if bike_norm and bike_norm in ext_norm else 0.0
+    s5 = (len(ext_norm) / len(bike_norm)) * 0.9 if ext_norm and ext_norm in bike_norm else 0.0
+
     bike_raw_words = [w for w in bike_raw.split() if len(w) >= 2]
     ext_raw_words  = set(ext_raw.split())
     s6 = (
@@ -389,14 +407,6 @@ def _compute_score(extracted_raw, bike_name_raw):
     )
 
     best = max(s1, s2, s3, s4, s5, s6)
-
-    print(
-        f"  [{bike_name_raw}] "
-        f"fuzzy_norm={s1:.2f} fuzzy_raw={s2:.2f} "
-        f"keyword={s3:.2f} substr={max(s4,s5):.2f} "
-        f"raw_word={s6:.2f} → {best:.2f}"
-    )
-
     return best
 
 
@@ -424,7 +434,7 @@ def find_best_bike_match(extracted_bike, all_documents):
             best_score = score
             best_doc = d
 
-    print(f"Best score: {best_score:.2f} → {best_doc.metadata.get('bike_name','') if best_doc else 'None'}")
+    print(f"Best score: {best_score:.2f} -> {best_doc.metadata.get('bike_name','') if best_doc else 'None'}")
 
     if best_doc and best_score > 0.3:
         return (
@@ -465,7 +475,7 @@ def find_best_bike_match_from_json(extracted_bike):
                 best_score = score
                 best_bike = bike
 
-        print(f"JSON best score: {best_score:.2f} → {best_bike.get('bike_name','') if best_bike else 'None'}")
+        print(f"JSON best score: {best_score:.2f} -> {best_bike.get('bike_name','') if best_bike else 'None'}")
 
         if best_bike and best_score > 0.3:
             return (
@@ -493,7 +503,6 @@ NEGATIVE_CONTEXT_PHRASES = [
     "a commitment", "punishing", "punish your",
     "not happy", "not for", "cramped",
     "is hot", "it's hot",
-    "would give you", "would be", "would feel",  # hypothetical framing
     "like the fireblade", "like the cbr",        # "like the X" = contrast bike
     "full-on", "full on",
     "in contrast", "on the other hand",
@@ -704,6 +713,8 @@ You are talking to ONE real user.
 
 CRITICAL BEHAVIOR RULES:
 
+- You are dedicated EXCLUSIVELY to motorcycle consultation and Honda bike recommendations
+- If the user asks about unrelated topics (general science, machine learning, coding, biology, politics, non-motorcycle subjects), politely decline and guide them back to finding their ideal motorcycle
 - Never say you are an AI
 - Never sound robotic
 - Never behave like a search engine
@@ -755,14 +766,13 @@ POSSIBLE BIKE CATEGORIES:
 IMPORTANT CONVERSATION RULES:
 
 - Talk naturally like an experienced biker friend
-- Keep responses conversational
+- Keep responses concise, clear, and summarized (2-3 short paragraphs max; avoid long walls of text)
 - Ask ONE natural follow-up question at a time
-- Guide the conversation slowly
-- Avoid recommending too early
+- Guide the conversation smoothly without unnecessary disclaimers or filler
 - Latest user message is MOST IMPORTANT
 - Do not repeat previous answers
 - Every response should move the conversation forward
-- Sound emotionally intelligent
+- Sound emotionally intelligent and knowledgeable
 
 =================================================
 
@@ -1017,11 +1027,11 @@ give confident personalized recommendations and always output RECOMMENDED_BIKE.
                     if physically_present:
                         print(
                             f"Tag bike '{bike_name}' found in reply but "
-                            f"ONLY in negative/dismissive context → scanning for actual recommendation"
+                            f"ONLY in negative/dismissive context -> scanning for actual recommendation"
                         )
                     else:
                         print(
-                            f"Tag bike '{bike_name}' NOT found in reply text → tag is stale"
+                            f"Tag bike '{bike_name}' NOT found in reply text -> tag is stale"
                         )
 
                     print("Scanning reply text for positively-mentioned bike...")
@@ -1078,8 +1088,8 @@ give confident personalized recommendations and always output RECOMMENDED_BIKE.
 
                 else:
 
-                    # Tag bike IS mentioned positively in reply → trust the LLM tag
-                    print(f"Tag bike '{bike_name}' confirmed positively in reply → keeping LLM tag")
+                    # Tag bike IS mentioned positively in reply -> trust the LLM tag
+                    print(f"Tag bike '{bike_name}' confirmed positively in reply -> keeping LLM tag")
 
             # =====================================
             # LOG FINAL RESULT
